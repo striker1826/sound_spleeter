@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge"; // Edge Runtime 사용
+export const maxDuration = 60; // 최대 실행 시간을 60초로 설정
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ filename: string; track: string }> }
@@ -13,6 +16,8 @@ export async function GET(
         headers: {
           Accept: "audio/wav",
         },
+        // 타임아웃 설정
+        signal: AbortSignal.timeout(30000), // 30초 타임아웃
       }
     );
 
