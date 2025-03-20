@@ -90,7 +90,8 @@ export default function Home() {
 
       // SSE 연결 설정
       const eventSource = new EventSource(
-        `/api/process/${encodeURIComponent(file.name)}`
+        `/api/process/${encodeURIComponent(file.name)}`,
+        { withCredentials: false }
       );
 
       eventSource.onmessage = (event) => {
