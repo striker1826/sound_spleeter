@@ -317,9 +317,7 @@ export default function Home() {
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <div className="text-sm text-gray-600 mt-1">
-              처리 중... {Math.round(progress)}%
-            </div>
+            <div className="text-sm text-gray-600 mt-1">처리 중...</div>
           </div>
         )}
         {error && <div className="text-red-500 mt-2">{error}</div>}
