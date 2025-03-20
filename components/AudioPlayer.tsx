@@ -41,7 +41,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         console.log(`Fetching audio: ${filename}/${track}`);
         const response = await fetch(
-          `/api/audio/${encodeURIComponent(filename)}/${track}`
+          `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
+            filename
+          )}/${track}`,
+          {
+            headers: {
+              Accept: "audio/wav",
+            },
+          }
         );
         console.log(`Response status: ${response.status}`);
 
@@ -62,19 +69,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         const blob = await response.blob();
         console.log(`Blob size: ${blob.size} bytes`);
         const url = URL.createObjectURL(blob);
+        console.log(`Created URL: ${url}`);
 
         soundRef.current = new Howl({
           src: [url],
           html5: true,
           format: ["wav"],
-          preload: true,
-          volume: volume,
           onload: () => {
             console.log("Audio loaded successfully");
             setIsLoading(false);
-            if (soundRef.current) {
-              onDurationChange(soundRef.current.duration());
-              soundRef.current.seek(currentTime);
+            if (onDurationChange) {
+              onDurationChange(soundRef.current?.duration() || 0);
             }
           },
           onloaderror: (id, error) => {
@@ -82,10 +87,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             setError("오디오 로딩 중 오류가 발생했습니다.");
             setIsLoading(false);
           },
-          onend: () => {
-            onPlayStateChange(false);
-            onTimeChange(0);
+          onplay: () => {
+            console.log("Audio started playing");
+            isPlayingRef.current = true;
+            if (onPlayStateChange) {
+              onPlayStateChange(true);
+            }
+          },
+          onpause: () => {
+            console.log("Audio paused");
             isPlayingRef.current = false;
+            if (onPlayStateChange) {
+              onPlayStateChange(false);
+            }
+          },
+          onstop: () => {
+            console.log("Audio stopped");
+            isPlayingRef.current = false;
+            if (onPlayStateChange) {
+              onPlayStateChange(false);
+            }
           },
         });
       } catch (err) {
@@ -171,25 +192,30 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-lg">
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-gray-600">{track} 트랙</div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">볼륨:</span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={volume}
-          onChange={handleVolumeChange}
-          className="w-32"
-        />
-        <span className="text-sm text-gray-600">
-          {Math.round(volume * 100)}%
-        </span>
-      </div>
+      {isLoading ? (
+        <div className="text-gray-600">Loading...</div>
+      ) : (
+        <>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-600">{track} 트랙</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">볼륨:</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={handleVolumeChange}
+              className="w-32"
+            />
+            <span className="text-sm text-gray-600">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 };

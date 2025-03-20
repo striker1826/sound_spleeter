@@ -37,7 +37,14 @@ export default function Home() {
   const tracks: Track[] = ["vocals", "drums", "bass", "other"];
   const soundRefs = useRef<Record<string, Howl | null>>({});
   const [progress, setProgress] = useState(0);
+  const [progressing, setProgressing] = useState(false);
   const [progressData, setProgressData] = useState<{}>({});
+
+  useEffect(() => {
+    if (progressing) {
+      setProcessedFilename(null);
+    }
+  }, [progressing]);
 
   // 재생 시간 업데이트를 위한 인터벌
   useEffect(() => {
@@ -85,23 +92,31 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setProcessedFilename(data.audio_files?.name);
+      setProcessedFilename(data.filename);
       setTrackVolumes(data.tracks);
 
       // SSE 연결 설정
+      setProgressing(true);
       const eventSource = new EventSource(
-        `/api/process/${encodeURIComponent(file.name)}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
+          data.filename
+        )}`,
         { withCredentials: false }
       );
 
       eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log("Progress update:", data);
-        setProgress(data.progress || 0);
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Progress update:", data);
+          setProgress(data.progress || 0);
 
-        if (data.progress === 100) {
-          eventSource.close();
-          setIsProcessing(false);
+          if (data.progress === 100) {
+            eventSource.close();
+            setProgressing(false);
+            setIsProcessing(false);
+          }
+        } catch (error) {
+          console.error("Error parsing SSE data:", error);
         }
       };
 
