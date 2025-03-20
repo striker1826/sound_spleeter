@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import AudioPlayer from "../components/AudioPlayer";
 import { Howl } from "howler";
+import { useRouter } from "next/navigation";
 
 type Track = "vocals" | "drums" | "bass" | "other";
 
@@ -20,6 +21,7 @@ interface ProcessResponse {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,46 +102,47 @@ export default function Home() {
       const data = await response.json();
       console.log("Upload response:", data);
 
-      if (!data.audio_files?.name) {
+      if (!data.filename) {
         throw new Error("서버에서 파일 이름을 받지 못했습니다.");
       }
 
-      setProcessedFilename(data.audio_files.name);
-      setTrackVolumes(data.audio_files.tracks || {});
+      setProcessedFilename(data.filename);
+      // setTrackVolumes(data.audio_files.tracks || {});
       setError(null);
 
       // 파일 업로드 완료 후 1초 후에 SSE 연결 시작
-      // setTimeout(() => {
-      //   const eventSource = new EventSource(
-      //     `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
-      //       data.audio_files.name
-      //     )}`,
-      //     { withCredentials: false }
-      //   );
+      setTimeout(() => {
+        const eventSource = new EventSource(
+          `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
+            data.filename
+          )}`,
+          { withCredentials: false }
+        );
 
-      //   eventSource.onmessage = (event) => {
-      //     try {
-      //       const data = JSON.parse(event.data);
-      //       console.log("Progress update:", data);
-      //       setProgress(data.progress || 0);
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Progress update:", data);
+            setProgress(data.progress || 0);
+            setProgress(data.progress);
+            if (data.progress === 100) {
+              eventSource.close();
+              setProgressing(false);
+              setIsProcessing(false);
+              router.refresh();
+            }
+          } catch (error) {
+            console.error("Error parsing SSE data:", error);
+          }
+        };
 
-      //       if (data.progress === 100) {
-      //         eventSource.close();
-      //         setProgressing(false);
-      //         setIsProcessing(false);
-      //       }
-      //     } catch (error) {
-      //       console.error("Error parsing SSE data:", error);
-      //     }
-      //   };
-
-      //   eventSource.onerror = (error) => {
-      //     console.error("SSE error:", error);
-      //     eventSource.close();
-      //     setIsProcessing(false);
-      //     setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
-      //   };
-      // }, 1000);
+        eventSource.onerror = (error) => {
+          console.error("SSE error:", error);
+          eventSource.close();
+          setIsProcessing(false);
+          setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
+        };
+      }, 1000);
     } catch (error) {
       console.error("Upload error:", error);
       setError("파일 업로드 중 오류가 발생했습니다.");
@@ -331,7 +334,9 @@ export default function Home() {
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <div className="text-sm text-gray-600 mt-1">처리 중...</div>
+            <div className="text-sm text-gray-600 mt-1">
+              처리 중... {progress}%
+            </div>
           </div>
         )}
         {error && <div className="text-red-500 mt-2">{error}</div>}
@@ -341,67 +346,75 @@ export default function Home() {
         <>
           <div className="mb-4 p-4 border rounded-lg bg-gray-50">
             <div className="flex items-center gap-4 mb-4">
-              <button
-                onClick={handlePlayAll}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              >
-                {isPlaying ? "일시정지" : "재생"}
-              </button>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    {formatTime(currentTime)}
-                  </span>
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration}
-                    step="0.1"
-                    value={currentTime}
-                    onChange={(e) =>
-                      handleTimeChange(parseFloat(e.target.value))
-                    }
-                    onMouseUp={handleTimeChangeEnd}
-                    onTouchEnd={handleTimeChangeEnd}
-                    className="flex-1 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-600">
-                    {formatTime(duration)}
-                  </span>
+              {!isProcessing && (
+                <button
+                  onClick={handlePlayAll}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  {isPlaying ? "일시정지" : "재생"}
+                </button>
+              )}
+              {!isProcessing && (
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      {formatTime(currentTime)}
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration}
+                      step="0.1"
+                      value={currentTime}
+                      onChange={(e) =>
+                        handleTimeChange(parseFloat(e.target.value))
+                      }
+                      onMouseUp={handleTimeChangeEnd}
+                      onTouchEnd={handleTimeChangeEnd}
+                      className="flex-1 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-600">
+                      {formatTime(duration)}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tracks.map((track) => (
-              <div key={track} data-track={track}>
-                <AudioPlayer
-                  filename={processedFilename}
-                  track={track}
-                  isPlaying={isPlaying}
-                  currentTime={currentTime}
-                  duration={duration}
-                  onPlayStateChange={(playing) => {
-                    if (!playing) {
-                      setIsPlaying(false);
-                    }
-                  }}
-                  onTimeChange={handleTimeChange}
-                  onDurationChange={handleDurationChange}
-                />
-              </div>
-            ))}
-          </div>
+          {!isProcessing && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {tracks.map((track) => (
+                <div key={track} data-track={track}>
+                  <AudioPlayer
+                    filename={processedFilename}
+                    track={track}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    duration={duration}
+                    onPlayStateChange={(playing) => {
+                      if (!playing) {
+                        setIsPlaying(false);
+                      }
+                    }}
+                    onTimeChange={handleTimeChange}
+                    onDurationChange={handleDurationChange}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
-          <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-            <button
-              onClick={handleDownload}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              현재 믹스 다운로드
-            </button>
-          </div>
+          {!isProcessing && (
+            <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+              <button
+                onClick={handleDownload}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                현재 믹스 다운로드
+              </button>
+            </div>
+          )}
         </>
       )}
     </main>

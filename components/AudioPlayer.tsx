@@ -39,10 +39,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
           soundRef.current.unload();
         }
 
-        console.log(`Fetching audio: ${filename}/${track}`);
+        const filenameWithoutExt = filename.replace(/\.[^/.]+$/, "");
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
-            filename
+            filenameWithoutExt
           )}/${track}`,
           {
             headers: {
