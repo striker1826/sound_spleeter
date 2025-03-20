@@ -109,37 +109,37 @@ export default function Home() {
       setError(null);
 
       // 파일 업로드 완료 후 1초 후에 SSE 연결 시작
-      setTimeout(() => {
-        const eventSource = new EventSource(
-          `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
-            data.audio_files.name
-          )}`,
-          { withCredentials: false }
-        );
+      // setTimeout(() => {
+      //   const eventSource = new EventSource(
+      //     `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
+      //       data.audio_files.name
+      //     )}`,
+      //     { withCredentials: false }
+      //   );
 
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log("Progress update:", data);
-            setProgress(data.progress || 0);
+      //   eventSource.onmessage = (event) => {
+      //     try {
+      //       const data = JSON.parse(event.data);
+      //       console.log("Progress update:", data);
+      //       setProgress(data.progress || 0);
 
-            if (data.progress === 100) {
-              eventSource.close();
-              setProgressing(false);
-              setIsProcessing(false);
-            }
-          } catch (error) {
-            console.error("Error parsing SSE data:", error);
-          }
-        };
+      //       if (data.progress === 100) {
+      //         eventSource.close();
+      //         setProgressing(false);
+      //         setIsProcessing(false);
+      //       }
+      //     } catch (error) {
+      //       console.error("Error parsing SSE data:", error);
+      //     }
+      //   };
 
-        eventSource.onerror = (error) => {
-          console.error("SSE error:", error);
-          eventSource.close();
-          setIsProcessing(false);
-          setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
-        };
-      }, 1000);
+      //   eventSource.onerror = (error) => {
+      //     console.error("SSE error:", error);
+      //     eventSource.close();
+      //     setIsProcessing(false);
+      //     setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
+      //   };
+      // }, 1000);
     } catch (error) {
       console.error("Upload error:", error);
       setError("파일 업로드 중 오류가 발생했습니다.");
