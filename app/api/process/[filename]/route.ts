@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-type Props = {
-  params: {
-    filename: string;
-  };
-};
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ filename: string }> }
+) {
+  const { filename } = await params;
 
-export async function GET(request: NextRequest, { params }: Props) {
   try {
     const response = await fetch(
-      `http://192.168.219.101:5000/process/${params.filename}`,
+      `http://192.168.219.101:5000/process/${filename}`,
       {
         headers: {
           Accept: "text/event-stream",

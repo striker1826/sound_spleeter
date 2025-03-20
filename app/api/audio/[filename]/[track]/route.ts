@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-type Props = {
-  params: {
-    filename: string;
-    track: string;
-  };
-};
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ filename: string; track: string }> }
+) {
+  const { filename, track } = await params;
 
-export async function GET(request: NextRequest, { params }: Props) {
   try {
     const response = await fetch(
-      `http://192.168.219.101:5000/audio/${params.filename}/${params.track}`
+      `http://192.168.219.101:5000/audio/${filename}/${track}`
     );
 
     if (!response.ok) {
