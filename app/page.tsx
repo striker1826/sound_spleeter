@@ -71,65 +71,48 @@ export default function Home() {
       setIsProcessing(true);
       setError(null);
       setProgress(0);
-      setProcessedFilename(null);
 
-      // 1. 파일 업로드
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch("http://192.168.219.101:5000/upload", {
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (!uploadResponse.ok) {
-        throw new Error("파일 업로드 중 오류가 발생했습니다.");
+      if (!response.ok) {
+        throw new Error("파일 업로드에 실패했습니다.");
       }
 
-      const uploadData = await uploadResponse.json();
-      if (uploadData.status === "error") {
-        throw new Error(
-          uploadData.message || "파일 업로드 중 오류가 발생했습니다."
-        );
-      }
+      const data = await response.json();
+      setProcessedFilename(data.audio_files?.name);
+      setTrackVolumes(data.tracks);
 
-      // 2. 파일 처리 시작 (SSE 연결)
+      // SSE 연결 설정
       const eventSource = new EventSource(
-        `http://192.168.219.101:5000/process/${uploadData.filename}`,
-        { withCredentials: false }
+        `/api/process/${encodeURIComponent(file.name)}`
       );
 
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log("Progress update:", data);
-
-        if (data.status === "error") {
-          eventSource.close();
-          throw new Error(data.message || "처리 중 오류가 발생했습니다.");
-        }
-
         setProgress(data.progress || 0);
 
-        if (data.status === "completed" && data.audio_files) {
-          setProcessedFilename(data.audio_files.name);
-          setCurrentTime(0);
-          setIsProcessing(false);
+        if (data.progress === 100) {
           eventSource.close();
+          setIsProcessing(false);
         }
       };
 
       eventSource.onerror = (error) => {
-        console.error("SSE Error:", error);
+        console.error("SSE error:", error);
         eventSource.close();
         setIsProcessing(false);
+        setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
       };
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "파일 업로드 중 오류가 발생했습니다."
-      );
+    } catch (error) {
+      console.error("Upload error:", error);
+      setError("파일 업로드 중 오류가 발생했습니다.");
       setIsProcessing(false);
     }
   };
@@ -170,10 +153,15 @@ export default function Home() {
   };
 
   const handleDownload = async () => {
+    if (!processedFilename) {
+      setError("파일이 선택되지 않았습니다.");
+      return;
+    }
+
     try {
       // 먼저 첫 번째 트랙을 로드하여 정확한 길이와 샘플 레이트를 가져옴
       const firstTrackResponse = await fetch(
-        `http://192.168.219.101:5000/audio/${processedFilename}/${tracks[0]}`
+        `/api/audio/${encodeURIComponent(processedFilename)}/${tracks[0]}`
       );
       const firstTrackBuffer = await firstTrackResponse.arrayBuffer();
       const firstTrackAudio = await new AudioContext().decodeAudioData(
@@ -190,7 +178,7 @@ export default function Home() {
       // 각 트랙을 오프라인 컨텍스트에 연결
       const loadPromises = tracks.map(async (track) => {
         const response = await fetch(
-          `http://192.168.219.101:5000/audio/${processedFilename}/${track}`
+          `/api/audio/${encodeURIComponent(processedFilename)}/${track}`
         );
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await offlineContext.decodeAudioData(arrayBuffer);
