@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { filename: string; track: string } }
-) {
+type Props = {
+  params: {
+    filename: string;
+    track: string;
+  };
+};
+
+export async function GET(request: NextRequest, { params }: Props) {
   try {
     const response = await fetch(
       `http://192.168.219.101:5000/audio/${params.filename}/${params.track}`

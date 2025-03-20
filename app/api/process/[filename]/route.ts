@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { filename: string } }
-) {
+type Props = {
+  params: {
+    filename: string;
+  };
+};
+
+export async function GET(request: NextRequest, { params }: Props) {
   try {
     const response = await fetch(
       `http://192.168.219.101:5000/process/${params.filename}`,
