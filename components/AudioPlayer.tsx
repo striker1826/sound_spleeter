@@ -41,7 +41,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         console.log(`Fetching audio: ${filename}/${track}`);
         const response = await fetch(
-          `http://192.168.219.101:5000/audio/${filename}/${track}`
+          `/api/audio/${encodeURIComponent(filename)}/${track}`
         );
         console.log(`Response status: ${response.status}`);
 

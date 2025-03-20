@@ -8,7 +8,12 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `http://192.168.219.101:5000/audio/${filename}/${track}`
+      `http://192.168.219.101:5000/audio/${filename}/${track}`,
+      {
+        headers: {
+          Accept: "audio/wav",
+        },
+      }
     );
 
     if (!response.ok) {
@@ -42,6 +47,8 @@ export async function GET(
       headers: {
         "Content-Type": "audio/wav",
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Accept",
       },
     });
   } catch (error) {
@@ -51,7 +58,14 @@ export async function GET(
         status: "error",
         message: "오디오 파일을 가져오는 중 오류가 발생했습니다.",
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Accept",
+        },
+      }
     );
   }
 }
