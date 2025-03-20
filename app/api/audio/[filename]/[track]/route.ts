@@ -6,9 +6,12 @@ export async function GET(
 ) {
   const { filename, track } = await params;
 
+  console.log({
+    test: `${process.env.NEXT_PUBLIC_API_URL}/audio/${filename}/${track}`,
+  });
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}:5000/audio/${filename}/${track}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/audio/${filename}/${track}`,
       {
         headers: {
           Accept: "audio/wav",

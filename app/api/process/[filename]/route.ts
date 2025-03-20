@@ -8,7 +8,7 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}:5000/process/${filename}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/process/${filename}`,
       {
         headers: {
           Accept: "text/event-stream",

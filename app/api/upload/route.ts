@@ -4,13 +4,10 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}:5000/upload`,
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
+      method: "POST",
+      body: formData,
+    });
 
     if (!response.ok) {
       throw new Error("파일 업로드 실패");
