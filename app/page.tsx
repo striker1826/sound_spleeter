@@ -192,35 +192,43 @@ export default function Home() {
     }
 
     try {
-      // 먼저 첫 번째 트랙을 로드하여 정확한 길이와 샘플 레이트를 가져옴
-      const firstTrackResponse = await fetch(
-        `/api/audio/${encodeURIComponent(processedFilename)}/${tracks[0]}`
-      );
-      const firstTrackBuffer = await firstTrackResponse.arrayBuffer();
-      const firstTrackAudio = await new AudioContext().decodeAudioData(
-        firstTrackBuffer
+      // AudioContext를 재사용하기 위해 상수로 선언
+      const audioContext = new AudioContext();
+
+      // 각 트랙을 순차적으로 로드하고 디코딩
+      const trackBuffers = await Promise.all(
+        tracks.map(async (track) => {
+          try {
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
+                processedFilename
+              )}/${track}`
+            );
+            const arrayBuffer = await response.arrayBuffer();
+            return await audioContext.decodeAudioData(arrayBuffer);
+          } catch (error) {
+            console.error(`트랙 ${track} 로딩 중 오류:`, error);
+            throw new Error(`트랙 ${track}을 디코딩할 수 없습니다.`);
+          }
+        })
       );
 
-      // 정확한 길이와 샘플 레이트로 OfflineAudioContext 생성
+      // 가장 긴 트랙의 길이를 기준으로 OfflineAudioContext 생성
+      const maxLength = Math.max(
+        ...trackBuffers.map((buffer) => buffer.length)
+      );
       const offlineContext = new OfflineAudioContext(
-        firstTrackAudio.numberOfChannels,
-        firstTrackAudio.length,
-        firstTrackAudio.sampleRate
+        2, // 스테레오 출력
+        maxLength,
+        trackBuffers[0].sampleRate
       );
 
       // 각 트랙을 오프라인 컨텍스트에 연결
-      const loadPromises = tracks.map(async (track) => {
-        const response = await fetch(
-          `/api/audio/${encodeURIComponent(processedFilename)}/${track}`
-        );
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await offlineContext.decodeAudioData(arrayBuffer);
-
+      tracks.forEach((track, index) => {
         const source = offlineContext.createBufferSource();
         const gainNode = offlineContext.createGain();
 
-        source.buffer = audioBuffer;
-        // 각 트랙의 현재 볼륨 값을 가져옴
+        source.buffer = trackBuffers[index];
         const trackElement = document.querySelector(`[data-track="${track}"]`);
         const volumeInput = trackElement?.querySelector(
           'input[type="range"]'
@@ -230,11 +238,8 @@ export default function Home() {
 
         source.connect(gainNode);
         gainNode.connect(offlineContext.destination);
-
         source.start(0);
       });
-
-      await Promise.all(loadPromises);
 
       // 오디오 렌더링
       const renderedBuffer = await offlineContext.startRendering();
