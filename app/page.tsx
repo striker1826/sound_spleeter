@@ -82,50 +82,64 @@ export default function Home() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("파일 업로드에 실패했습니다.");
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "파일 업로드 중 오류가 발생했습니다."
+        );
       }
 
       const data = await response.json();
-      setProcessedFilename(data.filename);
-      setTrackVolumes(data.tracks);
+      console.log("Upload response:", data);
 
-      // SSE 연결 설정
-      setProgressing(true);
-      const eventSource = new EventSource(
-        `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
-          data.filename
-        )}`,
-        { withCredentials: false }
-      );
+      if (!data.audio_files?.name) {
+        throw new Error("서버에서 파일 이름을 받지 못했습니다.");
+      }
 
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("Progress update:", data);
-          setProgress(data.progress || 0);
+      setProcessedFilename(data.audio_files.name);
+      setTrackVolumes(data.audio_files.tracks || {});
+      setError(null);
 
-          if (data.progress === 100) {
-            eventSource.close();
-            setProgressing(false);
-            setIsProcessing(false);
+      // 파일 업로드 완료 후 1초 후에 SSE 연결 시작
+      setTimeout(() => {
+        const eventSource = new EventSource(
+          `${process.env.NEXT_PUBLIC_API_URL}/process/${encodeURIComponent(
+            data.audio_files.name
+          )}`,
+          { withCredentials: false }
+        );
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Progress update:", data);
+            setProgress(data.progress || 0);
+
+            if (data.progress === 100) {
+              eventSource.close();
+              setProgressing(false);
+              setIsProcessing(false);
+            }
+          } catch (error) {
+            console.error("Error parsing SSE data:", error);
           }
-        } catch (error) {
-          console.error("Error parsing SSE data:", error);
-        }
-      };
+        };
 
-      eventSource.onerror = (error) => {
-        console.error("SSE error:", error);
-        eventSource.close();
-        setIsProcessing(false);
-        setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
-      };
+        eventSource.onerror = (error) => {
+          console.error("SSE error:", error);
+          eventSource.close();
+          setIsProcessing(false);
+          setError("진행 상태를 가져오는 중 오류가 발생했습니다.");
+        };
+      }, 1000);
     } catch (error) {
       console.error("Upload error:", error);
       setError("파일 업로드 중 오류가 발생했습니다.");
