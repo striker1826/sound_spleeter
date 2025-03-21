@@ -12,6 +12,7 @@ const ProcessTemplate = () => {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processedFilename, setProcessedFilename] = useState<string | null>(
     "질풍가도-유영석"
@@ -54,7 +55,7 @@ const ProcessTemplate = () => {
   // 오디오 파일 로드
   const loadAudio = async (track: string) => {
     try {
-      setIsProcessing(true);
+      setIsAudioLoaded(true);
       const filenameWithoutExt = processedFilename!.replace(/\.[^/.]+$/, "");
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
@@ -72,7 +73,7 @@ const ProcessTemplate = () => {
     } catch (error) {
       console.error(`Failed to load ${track}:`, error);
     } finally {
-      setIsProcessing(false);
+      setIsAudioLoaded(false);
     }
   };
 
@@ -445,6 +446,16 @@ const ProcessTemplate = () => {
         </div>
       )}
 
+      {isAudioLoaded && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
+            <h3 className="text-[#fff] text-[20px] font-bold text-center">
+              오디오 정보를 가져오는 중입니다!
+            </h3>
+          </div>
+        </div>
+      )}
+
       <div className="w-full bg-[#1F2937] py-[16px] px-[32px]">
         <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
       </div>
@@ -513,7 +524,7 @@ const ProcessTemplate = () => {
             </div>
           </div>
 
-          {!isProcessing && (
+          {!isAudioLoaded && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[32px]">
               {processedFilename &&
                 tracks.map((track) => (
