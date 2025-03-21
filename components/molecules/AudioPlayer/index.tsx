@@ -80,9 +80,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
           preload: true,
           format: ["wav"],
           pool: 1,
-          xhr: {
-            cache: true,
-          },
+
           onload: () => {
             console.log("Audio loaded successfully");
             setIsLoading(false);
