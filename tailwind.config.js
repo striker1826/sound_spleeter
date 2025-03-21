@@ -3,7 +3,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./Components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,tsx,jsx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
@@ -16,14 +16,4 @@ module.exports = {
     },
   },
   plugins: [],
-  safelist: [
-    "bg-[#374151]",
-    "bg-[#1F2937]",
-    "bg-[#111827]",
-    "text-[#fff]",
-    "text-[#9CA3AF]",
-    "text-[#6B7280]",
-    "border-[#4B5563]",
-    "border-[#6B7280]",
-  ],
 };
