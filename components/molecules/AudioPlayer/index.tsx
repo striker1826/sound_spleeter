@@ -180,15 +180,24 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [isPlaying]);
 
-  // currentTime 변경 시 오디오 재생 위치 업데이트
+  // 시간 변경 시 seek 호출
   useEffect(() => {
-    if (!soundRef.current) return;
-
-    const currentSeek = soundRef.current.seek() as number;
-    if (Math.abs(currentSeek - currentTime) > 0.1) {
-      soundRef.current.seek(currentTime);
+    if (soundRef.current) {
+      const currentSeek = soundRef.current.seek();
+      if (Math.abs(currentSeek - currentTime) > 0.1) {
+        soundRef.current.seek(currentTime);
+      }
     }
   }, [currentTime]);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.unload();
+      }
+    };
+  }, []);
 
   const togglePlay = () => {
     if (!soundRef.current) return;
