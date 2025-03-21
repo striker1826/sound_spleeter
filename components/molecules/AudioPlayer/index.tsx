@@ -76,9 +76,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         soundRef.current = new Howl({
           src: [url],
-          html5: true,
+          html5: false,
           preload: true,
           format: ["wav"],
+          pool: 1,
+          xhr: {
+            cache: true,
+          },
           onload: () => {
             console.log("Audio loaded successfully");
             setIsLoading(false);
@@ -169,17 +173,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     };
   }, [isPlaying]);
 
-  // isPlaying 상태 변경 시 오디오 재생/일시정지 제어
-  useEffect(() => {
-    if (!soundRef.current) return;
-
-    if (isPlaying) {
-      soundRef.current.play();
-    } else {
-      soundRef.current.pause();
-    }
-  }, [isPlaying]);
-
   // currentTime 변경 시 오디오 재생 위치 업데이트
   useEffect(() => {
     if (!soundRef.current) return;
@@ -189,6 +182,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       soundRef.current.seek(currentTime);
     }
   }, [currentTime]);
+
+  // isPlaying 상태 변경 시 오디오 재생/일시정지 제어
+  useEffect(() => {
+    if (!soundRef.current) return;
+
+    if (isPlaying) {
+      // 재생 시작 시 현재 시간으로 seek
+      soundRef.current.seek(currentTime);
+      soundRef.current.play();
+    } else {
+      soundRef.current.pause();
+    }
+  }, [isPlaying, currentTime]);
 
   const togglePlay = () => {
     if (!soundRef.current) return;
