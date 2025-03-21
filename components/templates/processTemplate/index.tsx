@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import AudioPlayer from "@/components/molecules/AudioPlayer";
 import Image from "next/image";
@@ -26,37 +25,116 @@ const ProcessTemplate = () => {
     other: 1,
   });
   const tracks: Track[] = ["vocals", "drums", "bass", "other"];
-  const soundRefs = useRef<Record<string, Howl | null>>({});
   const [progress, setProgress] = useState(0);
 
+  // Web Audio API 관련 refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioBuffersRef = useRef<{ [key: string]: AudioBuffer }>({});
+  const gainNodesRef = useRef<{ [key: string]: GainNode }>({});
+  const sourceNodesRef = useRef<{
+    [key: string]: AudioBufferSourceNode | null;
+  }>({});
+
+  // AudioContext 초기화
   useEffect(() => {
-    if (isProcessing) {
-      setProcessedFilename(null);
+    audioContextRef.current = new AudioContext();
+    const tracks = ["vocals", "drums", "bass", "other"];
+
+    tracks.forEach((track) => {
+      const gainNode = audioContextRef.current!.createGain();
+      gainNode.connect(audioContextRef.current!.destination);
+      gainNodesRef.current[track] = gainNode;
+    });
+
+    return () => {
+      audioContextRef.current?.close();
+    };
+  }, []);
+
+  // 오디오 파일 로드
+  const loadAudio = async (track: string) => {
+    try {
+      const filenameWithoutExt = processedFilename!.replace(/\.[^/.]+$/, "");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
+          filenameWithoutExt
+        )}/${track}`
+      );
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await audioContextRef.current!.decodeAudioData(
+        arrayBuffer
+      );
+      audioBuffersRef.current[track] = audioBuffer;
+      if (track === "vocals") {
+        setDuration(audioBuffer.duration);
+      }
+    } catch (error) {
+      console.error(`Failed to load ${track}:`, error);
     }
-  }, [isProcessing]);
+  };
 
-  // 재생 시간 업데이트를 위한 인터벌
+  // processedFilename이 변경될 때 모든 트랙 로드
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    if (!processedFilename || !audioContextRef.current) return;
 
+    const loadAllTracks = async () => {
+      try {
+        await Promise.all(tracks.map((track) => loadAudio(track)));
+        console.log("All tracks loaded successfully");
+      } catch (error) {
+        console.error("Error loading tracks:", error);
+        setError("트랙 로딩 중 오류가 발생했습니다.");
+      }
+    };
+
+    loadAllTracks();
+  }, [processedFilename]);
+
+  // 모든 트랙 재생 시작
+  const startPlayback = () => {
+    tracks.forEach((track) => {
+      // 이전 소스 노드 정리
+      if (sourceNodesRef.current[track]) {
+        sourceNodesRef.current[track]!.stop();
+        sourceNodesRef.current[track]!.disconnect();
+      }
+      // 새로운 소스 노드 생성
+      const source = audioContextRef.current!.createBufferSource();
+      source.buffer = audioBuffersRef.current[track];
+      source.connect(gainNodesRef.current[track]);
+      source.start(0, currentTime);
+      sourceNodesRef.current[track] = source;
+    });
+  };
+
+  // 모든 트랙 정지
+  const stopPlayback = () => {
+    Object.values(sourceNodesRef.current).forEach((source) => {
+      if (source) {
+        source.stop();
+        source.disconnect();
+      }
+    });
+    sourceNodesRef.current = {};
+  };
+
+  // 시간 업데이트
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
     if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime((prevTime) => {
-          const nextTime = prevTime + 0.1;
-          if (nextTime >= duration) {
+      intervalId = setInterval(() => {
+        setCurrentTime((prev) => {
+          const newTime = prev + 0.1;
+          if (newTime >= duration) {
+            stopPlayback();
             setIsPlaying(false);
             return 0;
           }
-          return nextTime;
+          return newTime;
         });
       }, 100);
     }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
+    return () => clearInterval(intervalId);
   }, [isPlaying, duration]);
 
   const handleFileUpload = async (
@@ -143,10 +221,12 @@ const ProcessTemplate = () => {
 
   const handlePlayAll = () => {
     if (!isPlaying) {
-      // 재생 시작 시에만 시간을 0으로 초기화
       if (currentTime === 0) {
         setCurrentTime(0);
       }
+      startPlayback();
+    } else {
+      stopPlayback();
     }
     setIsPlaying(!isPlaying);
   };
@@ -157,17 +237,9 @@ const ProcessTemplate = () => {
 
   const handleTimeChangeEnd = () => {
     // 모든 트랙의 시간을 즉시 업데이트
-    if (soundRefs.current) {
-      Object.values(soundRefs.current).forEach((sound) => {
-        if (sound) {
-          sound.seek(currentTime);
-        }
-      });
+    if (sourceNodesRef.current) {
+      startPlayback();
     }
-  };
-
-  const handleDurationChange = (newDuration: number) => {
-    setDuration(newDuration);
   };
 
   const formatTime = (time: number) => {
@@ -444,18 +516,8 @@ const ProcessTemplate = () => {
                 tracks.map((track) => (
                   <div key={track} data-track={track}>
                     <AudioPlayer
-                      filename={processedFilename}
                       track={track}
-                      isPlaying={isPlaying}
-                      currentTime={currentTime}
-                      duration={duration}
-                      onPlayStateChange={(playing) => {
-                        if (!playing) {
-                          setIsPlaying(false);
-                        }
-                      }}
-                      onTimeChange={handleTimeChange}
-                      onDurationChange={handleDurationChange}
+                      gainNode={gainNodesRef.current[track]}
                     />
                   </div>
                 ))}
