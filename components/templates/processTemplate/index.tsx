@@ -1,26 +1,15 @@
 "use client";
+"use client";
 
-import { useState, useEffect, useRef } from "react";
-import AudioPlayer from "../components/molecules/AudioPlayer";
-import { Howl } from "howler";
+import AudioPlayer from "@/components/molecules/AudioPlayer";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-
+import { useEffect, useRef, useState } from "react";
+import { CiPause1 } from "react-icons/ci";
+import { FaPause } from "react-icons/fa";
 type Track = "vocals" | "drums" | "bass" | "other";
 
-interface ProcessResponse {
-  status: "success" | "error";
-  message?: string;
-  error?: string;
-  audio_files?: {
-    vocals: string;
-    drums: string;
-    bass: string;
-    other: string;
-    name: string;
-  };
-}
-
-export default function Home() {
+const ProcessTemplate = () => {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -72,9 +61,11 @@ export default function Home() {
     };
   }, [isPlaying, duration]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = async (
+    file: File | React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const uploadFile = file instanceof File ? file : file.target.files?.[0];
+    if (!uploadFile) return;
 
     try {
       setIsProcessing(true);
@@ -82,7 +73,7 @@ export default function Home() {
       setProgress(0);
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/upload`,
@@ -319,109 +310,188 @@ export default function Home() {
     }
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    // 파일 타입 체크
+    if (!file.type.startsWith("audio/")) {
+      setError("오디오 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    // 파일 크기 체크 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("파일 크기는 10MB를 초과할 수 없습니다.");
+      return;
+    }
+
+    // 파일 업로드 처리
+    await handleFileUpload(file);
+  };
+
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">오디오 분리기</h1>
-
-      <div className="mb-4">
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={handleFileUpload}
-          className="mb-2"
-          disabled={isProcessing}
-        />
-        {isProcessing && (
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
+    <>
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
+            <h3 className="text-[#fff] text-[20px] font-bold mb-[16px] text-center">
+              파일 처리 중
+            </h3>
+            <div className="w-full bg-[#374151] rounded-full h-2">
               <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                className="bg-[#000] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
-              ></div>
+              />
             </div>
-            <div className="text-sm text-gray-600 mt-1">
-              처리 중... {progress}%
-            </div>
+            <p className="text-[#9CA3AF] text-[14px] mt-[8px] text-center">
+              {progress}% 완료
+            </p>
           </div>
-        )}
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-      </div>
-
-      {processedFilename && (
-        <>
-          <div className="mb-4 p-4 border rounded-lg bg-gray-50">
-            <div className="flex items-center gap-4 mb-4">
-              {!isProcessing && (
-                <button
-                  onClick={handlePlayAll}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  {isPlaying ? "일시정지" : "재생"}
-                </button>
-              )}
-              {!isProcessing && (
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      {formatTime(currentTime)}
-                    </span>
-                    <input
-                      type="range"
-                      min="0"
-                      max={duration}
-                      step="0.1"
-                      value={currentTime}
-                      onChange={(e) =>
-                        handleTimeChange(parseFloat(e.target.value))
-                      }
-                      onMouseUp={handleTimeChangeEnd}
-                      onTouchEnd={handleTimeChangeEnd}
-                      className="flex-1 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-600">
-                      {formatTime(duration)}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {!isProcessing && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tracks.map((track) => (
-                <div key={track} data-track={track}>
-                  <AudioPlayer
-                    filename={processedFilename}
-                    track={track}
-                    isPlaying={isPlaying}
-                    currentTime={currentTime}
-                    duration={duration}
-                    onPlayStateChange={(playing) => {
-                      if (!playing) {
-                        setIsPlaying(false);
-                      }
-                    }}
-                    onTimeChange={handleTimeChange}
-                    onDurationChange={handleDurationChange}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!isProcessing && (
-            <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-              <button
-                onClick={handleDownload}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                현재 믹스 다운로드
-              </button>
-            </div>
-          )}
-        </>
+        </div>
       )}
-    </main>
+
+      <div className="w-full bg-[#1F2937] py-[16px] px-[32px]">
+        <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
+      </div>
+      <div className="flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
+        <div className="w-full rounded-[8px] px-[24px] bg-[#1F2937]">
+          <h2 className="mt-[24px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
+            움원 분리 도구
+          </h2>
+          <p className="mt-[16px] text-[#9CA3AF] text-[16px] leading-[24px] text-center">
+            음악 파일을 업로드하여 보컬, 드럼, 베이스, 기타 악기를 분리하세요
+          </p>
+
+          <div
+            className={`mt-[32px] flex flex-col justify-center items-center rounded-[8px] border-dashed border-[#4B5563] border-[2px] transition-colors duration-200 ${
+              isDragging ? "bg-[#374151] border-[#6B7280]" : ""
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <Image
+              className="mt-[56px]"
+              src={"/imgs/cloud.png"}
+              alt="upload"
+              width={45}
+              height={31.5}
+            />
+            <p className="mt-[16px] text-[#9CA3AF] text-[16px] leading-[28px]">
+              파일을 여기에 드래그하거나
+            </p>
+            <label className="mt-[8px] bg-[#000] text-[#fff] py-[8px] px-[16px] rounded-[4px] text-[16px] leading-[24px] cursor-pointer">
+              파일 선택하기
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={isProcessing}
+              />
+            </label>
+            <p className="mt-[40px] mb-[56px] text-[#6B7280] text-[14px] leading-[20px]">
+              지원 형식: MP3, WAV (최대 10MB)
+            </p>
+          </div>
+
+          <div className="mt-[32px] rounded-[8px] w-full bg-[#374151] py-[16px] px-[16px]">
+            <h3 className="text-[#fff] truncate">{processedFilename}</h3>
+            <input
+              type="range"
+              min="0"
+              max={duration}
+              step="0.1"
+              value={currentTime}
+              onChange={(e) => handleTimeChange(parseFloat(e.target.value))}
+              onMouseUp={handleTimeChangeEnd}
+              onTouchEnd={handleTimeChangeEnd}
+              className="flex-1 cursor-pointer w-full mt-[16px]"
+            />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-200">
+                {formatTime(currentTime)}
+              </span>
+              <span className="text-sm text-gray-200">
+                {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+
+          {!isProcessing && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[32px]">
+              {processedFilename &&
+                tracks.map((track) => (
+                  <div key={track} data-track={track}>
+                    <AudioPlayer
+                      filename={processedFilename}
+                      track={track}
+                      isPlaying={isPlaying}
+                      currentTime={currentTime}
+                      duration={duration}
+                      onPlayStateChange={(playing) => {
+                        if (!playing) {
+                          setIsPlaying(false);
+                        }
+                      }}
+                      onTimeChange={handleTimeChange}
+                      onDurationChange={handleDurationChange}
+                    />
+                  </div>
+                ))}
+            </div>
+          )}
+
+          <div className="w-full flex justify-center items-center gap-[24px] mt-[32px] mb-[24px]">
+            <button
+              className=" bg-[#000] px-[16px] py-[12px] rounded-[4px]"
+              onClick={handlePlayAll}
+            >
+              {isPlaying ? (
+                <FaPause color="#fff" />
+              ) : (
+                <Image
+                  src={"/imgs/play.png"}
+                  alt="play"
+                  width={12}
+                  height={12}
+                />
+              )}
+            </button>
+
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-[8px] rounded-[4px] px-[24px] py-[8px] bg-[#000] text-[#fff] text-[16px] leading-[24px]"
+            >
+              <Image
+                src={"/imgs/download.png"}
+                alt="download"
+                width={16}
+                height={16}
+              />
+              다운로드
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
-}
+};
+
+export default ProcessTemplate;

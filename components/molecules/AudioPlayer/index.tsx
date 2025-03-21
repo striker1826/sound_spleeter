@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Howl } from "howler";
+import Image from "next/image";
 
 interface AudioPlayerProps {
   filename: string;
@@ -190,14 +191,39 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return <div className="text-red-500">{error}</div>;
   }
 
+  const matchIcon = (track: string) => {
+    switch (track) {
+      case "vocals":
+        return "/imgs/vocal.png";
+      case "drums":
+        return "/imgs/drum.png";
+      case "bass":
+        return "/imgs/bass.png";
+      case "other":
+        return "/imgs/other.png";
+      default:
+        return "/imgs/vocal.png";
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-4 p-4 border rounded-lg">
+    <div className="flex flex-col gap-4 p-4 bg-[#374151] rounded-[8px] px-[16px] pt-[16px] pb-[28px] md:pb-[16px]">
       {isLoading ? (
         <div className="text-gray-600">Loading...</div>
       ) : (
         <>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">{track} 트랙</div>
+          <div className="flex gap-4 justify-between items-center">
+            <div className="flex gap-[12px] items-center">
+              <Image
+                src={matchIcon(track)}
+                width={14}
+                height={16}
+                alt="vocal"
+              />
+              <div className="text-[#fff] text-[16px] font-[500] leading-[24px]">
+                {track}
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">볼륨:</span>
@@ -208,7 +234,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               step="0.1"
               value={volume}
               onChange={handleVolumeChange}
-              className="w-32"
+              className="w-full"
             />
             <span className="text-sm text-gray-600">
               {Math.round(volume * 100)}%
