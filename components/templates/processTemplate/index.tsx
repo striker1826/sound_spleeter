@@ -54,6 +54,7 @@ const ProcessTemplate = () => {
   // 오디오 파일 로드
   const loadAudio = async (track: string) => {
     try {
+      setIsProcessing(true);
       const filenameWithoutExt = processedFilename!.replace(/\.[^/.]+$/, "");
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
@@ -70,6 +71,8 @@ const ProcessTemplate = () => {
       }
     } catch (error) {
       console.error(`Failed to load ${track}:`, error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
