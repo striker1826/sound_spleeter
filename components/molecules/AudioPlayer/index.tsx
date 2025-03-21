@@ -76,7 +76,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
         soundRef.current = new Howl({
           src: [url],
-          html5: false,
+          html5: true,
           preload: true,
           format: ["wav"],
           pool: 1,
