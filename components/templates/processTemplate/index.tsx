@@ -190,9 +190,13 @@ const ProcessTemplate = () => {
       const trackBuffers = await Promise.all(
         tracks.map(async (track) => {
           try {
+            const filenameWithoutExt = processedFilename.replace(
+              /\.[^/.]+$/,
+              ""
+            );
             const response = await fetch(
               `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
-                processedFilename
+                filenameWithoutExt
               )}/${track}`
             );
             const arrayBuffer = await response.arrayBuffer();
