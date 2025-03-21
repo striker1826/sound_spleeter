@@ -79,8 +79,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
           html5: true,
           preload: true,
           format: ["wav"],
-          pool: 1,
-
           onload: () => {
             console.log("Audio loaded successfully");
             setIsLoading(false);
@@ -171,48 +169,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     };
   }, [isPlaying]);
 
-  // currentTime 변경 시 오디오 재생 위치 업데이트
-  useEffect(() => {
-    if (!soundRef.current) return;
-
-    const currentSeek = soundRef.current.seek() as number;
-    if (Math.abs(currentSeek - currentTime) > 0.1) {
-      soundRef.current.seek(currentTime);
-    }
-  }, [currentTime]);
-
   // isPlaying 상태 변경 시 오디오 재생/일시정지 제어
   useEffect(() => {
     if (!soundRef.current) return;
 
     if (isPlaying) {
-      // 재생 시작 시 현재 시간으로 seek
-      soundRef.current.seek(currentTime);
       soundRef.current.play();
     } else {
       soundRef.current.pause();
     }
-  }, [isPlaying, currentTime]);
-
-  const togglePlay = () => {
-    if (!soundRef.current) return;
-
-    if (isPlaying) {
-      soundRef.current.pause();
-    } else {
-      soundRef.current.play();
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (soundRef.current) {
-      soundRef.current.seek(time);
-      if (onTimeChange) {
-        onTimeChange(time);
-      }
-    }
-  };
+  }, [isPlaying]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
