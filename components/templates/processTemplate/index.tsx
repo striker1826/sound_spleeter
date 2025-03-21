@@ -242,7 +242,11 @@ const ProcessTemplate = () => {
   const handleTimeChangeEnd = () => {
     // 모든 트랙의 시간을 즉시 업데이트
     if (sourceNodesRef.current) {
-      startPlayback();
+      if (isPlaying) {
+        startPlayback();
+      } else {
+        stopPlayback();
+      }
     }
   };
 
