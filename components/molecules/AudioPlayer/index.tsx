@@ -209,7 +209,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#374151] rounded-[8px] px-[16px] pt-[16px] pb-[28px] md:pb-[16px]">
       {isLoading ? (
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-gray-600">{track} Loading...</div>
       ) : (
         <>
           <div className="flex gap-4 justify-between items-center">
@@ -226,7 +226,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">볼륨:</span>
+            <span className="text-sm text-[#fff]">볼륨:</span>
             <input
               type="range"
               min="0"

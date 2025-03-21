@@ -28,14 +28,12 @@ const ProcessTemplate = () => {
   const tracks: Track[] = ["vocals", "drums", "bass", "other"];
   const soundRefs = useRef<Record<string, Howl | null>>({});
   const [progress, setProgress] = useState(0);
-  const [progressing, setProgressing] = useState(false);
-  const [progressData, setProgressData] = useState<{}>({});
 
   useEffect(() => {
-    if (progressing) {
+    if (isProcessing) {
       setProcessedFilename(null);
     }
-  }, [progressing]);
+  }, [isProcessing]);
 
   // 재생 시간 업데이트를 위한 인터벌
   useEffect(() => {
@@ -91,13 +89,12 @@ const ProcessTemplate = () => {
       }
 
       const data = await response.json();
-      console.log("Upload response:", data);
-
+      const filename = data.filename;
       if (!data.filename) {
         throw new Error("서버에서 파일 이름을 받지 못했습니다.");
       }
 
-      setProcessedFilename(data.filename);
+      // setProcessedFilename(data.filename);
       // setTrackVolumes(data.audio_files.tracks || {});
       setError(null);
 
@@ -110,7 +107,7 @@ const ProcessTemplate = () => {
           { withCredentials: false }
         );
 
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = async (event) => {
           try {
             const data = JSON.parse(event.data);
             console.log("Progress update:", data);
@@ -118,8 +115,11 @@ const ProcessTemplate = () => {
             setProgress(data.progress);
             if (data.progress === 100) {
               eventSource.close();
-              setProgressing(false);
               setIsProcessing(false);
+
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              console.log("filename", filename);
+              setProcessedFilename(filename);
               router.refresh();
             }
           } catch (error) {
