@@ -1,20 +1,15 @@
-import type { NextConfig } from "next";
+import { NextConfig } from "next";
 
 const nextConfig = {
   /* config options here */
   reactStrictMode: true,
-  api: {
-    bodyParser: {
-      sizeLimit: "50mb",
-    },
-  },
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
+  swcMinify: true,
   experimental: {
     appDir: true,
   },
+  pageExtensions: ["tsx", "ts", "jsx", "js"].filter((extension) => {
+    return !extension.includes("page");
+  }),
 };
 
 export default nextConfig;
