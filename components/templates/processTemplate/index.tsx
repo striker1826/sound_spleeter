@@ -460,7 +460,7 @@ const ProcessTemplate = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
             <h3 className="text-[#fff] text-[20px] font-bold text-center">
-              오디오 정보를 가져오는 중입니다!
+              오디오 정보를 가져오는 중입니다. 10 ~ 15초 정도 소요됩니다.
             </h3>
           </div>
         </div>
