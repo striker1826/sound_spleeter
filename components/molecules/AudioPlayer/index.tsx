@@ -169,6 +169,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     };
   }, [isPlaying]);
 
+  // isPlaying 상태 변경 시 오디오 재생/일시정지 제어
+  useEffect(() => {
+    if (!soundRef.current) return;
+
+    if (isPlaying) {
+      soundRef.current.play();
+    } else {
+      soundRef.current.pause();
+    }
+  }, [isPlaying]);
+
   const togglePlay = () => {
     if (!soundRef.current) return;
 
