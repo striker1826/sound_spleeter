@@ -28,6 +28,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const soundRef = useRef<Howl | null>(null);
   const isPlayingRef = useRef(false);
+  const requestRef = useRef<number | undefined>(undefined);
+  const previousTimeRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const loadAudio = async () => {
@@ -75,6 +77,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         soundRef.current = new Howl({
           src: [url],
           html5: true,
+          preload: true,
           format: ["wav"],
           onload: () => {
             console.log("Audio loaded successfully");
@@ -109,6 +112,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               onPlayStateChange(false);
             }
           },
+          onend: () => {
+            if (onPlayStateChange) {
+              onPlayStateChange(false);
+            }
+            if (onTimeChange) {
+              onTimeChange(0);
+            }
+          },
         });
       } catch (err) {
         console.error("Fetch error:", err);
@@ -128,48 +139,62 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         soundRef.current.stop();
         soundRef.current.unload();
       }
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
     };
   }, [filename, track]);
 
-  // 재생/일시정지 제어
-  useEffect(() => {
-    if (!soundRef.current) return;
-
-    if (isPlaying && !isPlayingRef.current) {
-      soundRef.current.seek(currentTime);
-      soundRef.current.play();
-      isPlayingRef.current = true;
-    } else if (!isPlaying && isPlayingRef.current) {
-      soundRef.current.pause();
-      isPlayingRef.current = false;
-    }
-  }, [isPlaying]);
-
-  // 시간 변경 시 seek 호출
-  useEffect(() => {
-    if (soundRef.current) {
-      const currentSeek = soundRef.current.seek();
-      if (Math.abs(currentSeek - currentTime) > 0.1) {
-        soundRef.current.seek(currentTime);
+  const animate = (time: number) => {
+    if (previousTimeRef.current !== undefined) {
+      const deltaTime = time - previousTimeRef.current;
+      if (soundRef.current?.playing()) {
+        if (onTimeChange) {
+          onTimeChange(soundRef.current.seek() as number);
+        }
       }
     }
-  }, [currentTime]);
+    previousTimeRef.current = time;
+    requestRef.current = requestAnimationFrame(animate);
+  };
 
-  // 볼륨 변경
   useEffect(() => {
-    if (soundRef.current) {
-      soundRef.current.volume(volume);
+    if (isPlaying) {
+      requestRef.current = requestAnimationFrame(animate);
     }
-  }, [volume]);
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const togglePlay = () => {
+    if (!soundRef.current) return;
+
+    if (isPlaying) {
+      soundRef.current.pause();
+    } else {
+      soundRef.current.play();
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (soundRef.current) {
+      soundRef.current.seek(time);
+      if (onTimeChange) {
+        onTimeChange(time);
+      }
+    }
+  };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-  };
-
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value);
-    onTimeChange(newTime);
+    if (soundRef.current) {
+      soundRef.current.volume(newVolume);
+      setVolume(newVolume);
+    }
   };
 
   const formatTime = (time: number) => {
@@ -177,15 +202,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
-
-  useEffect(() => {
-    return () => {
-      if (soundRef.current) {
-        soundRef.current.stop();
-        soundRef.current.unload();
-      }
-    };
-  }, []);
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
