@@ -1,6 +1,7 @@
 "use client";
 
 import AudioPlayer from "@/components/molecules/AudioPlayer";
+import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +10,8 @@ import { FaPause } from "react-icons/fa";
 type Track = "vocals" | "drums" | "bass" | "other";
 
 const ProcessTemplate = () => {
+  const { data: session } = useSession();
+  const providerAccountId = session?.providerAccountId;
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -153,7 +156,8 @@ const ProcessTemplate = () => {
       setProgress(0);
 
       const formData = new FormData();
-      formData.append("file", uploadFile);
+      const userPrefix = `${providerAccountId}_`;
+      formData.append("file", uploadFile, userPrefix + uploadFile.name);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/upload`,
@@ -275,7 +279,9 @@ const ProcessTemplate = () => {
               ""
             );
             const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
+              `${
+                process.env.NEXT_PUBLIC_API_URL
+              }/audio/${providerAccountId}_${encodeURIComponent(
                 filenameWithoutExt
               )}/${track}`
             );
@@ -460,8 +466,23 @@ const ProcessTemplate = () => {
         </div>
       )}
 
-      <div className="w-full bg-[#1F2937] py-[16px] px-[32px]">
+      <div className="w-full bg-[#1F2937] py-[16px] px-[32px] flex justify-between items-center">
         <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
+        {session?.accessToken ? (
+          <button
+            className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
+            onClick={() => signOut()}
+          >
+            로그아웃
+          </button>
+        ) : (
+          <button
+            className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
+            onClick={() => signIn("kakao")}
+          >
+            로그인
+          </button>
+        )}
       </div>
       <div className="flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
         <div className="w-full rounded-[8px] px-[24px] bg-[#1F2937]">
@@ -506,7 +527,9 @@ const ProcessTemplate = () => {
           </div>
 
           <div className="mt-[32px] rounded-[8px] w-full bg-[#374151] py-[16px] px-[16px]">
-            <h3 className="text-[#fff] truncate">{processedFilename}</h3>
+            <h3 className="text-[#fff] truncate">
+              {processedFilename?.split("_").slice(1).join("_")}
+            </h3>
             <input
               type="range"
               min="0"
