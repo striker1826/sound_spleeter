@@ -180,6 +180,25 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [isPlaying]);
 
+  // 시간 변경 시 seek 호출
+  useEffect(() => {
+    if (soundRef.current) {
+      const currentSeek = soundRef.current.seek();
+      if (Math.abs(currentSeek - currentTime) > 0.1) {
+        soundRef.current.seek(currentTime);
+      }
+    }
+  }, [currentTime]);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.unload();
+      }
+    };
+  }, []);
+
   const togglePlay = () => {
     if (!soundRef.current) return;
 
@@ -190,14 +209,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    if (soundRef.current) {
-      soundRef.current.volume(newVolume);
-      setVolume(newVolume);
-    }
-  };
-
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
     if (soundRef.current) {
@@ -205,6 +216,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       if (onTimeChange) {
         onTimeChange(time);
       }
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    if (soundRef.current) {
+      soundRef.current.volume(newVolume);
+      setVolume(newVolume);
     }
   };
 
