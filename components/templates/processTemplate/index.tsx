@@ -15,7 +15,7 @@ const ProcessTemplate = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processedFilename, setProcessedFilename] = useState<string | null>(
-    "DAY6_HAPPY_Lyric_Video"
+    "질풍가도-유영석"
   );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
