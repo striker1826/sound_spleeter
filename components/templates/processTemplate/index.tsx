@@ -484,7 +484,7 @@ const ProcessTemplate = () => {
           </button>
         )}
       </div>
-      <div className="flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
+      <div className="min-h-screen flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
         <div className="w-full rounded-[8px] px-[24px] bg-[#1F2937]">
           <h2 className="mt-[24px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
             움원 분리 도구
