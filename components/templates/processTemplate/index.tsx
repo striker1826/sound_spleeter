@@ -266,6 +266,11 @@ const ProcessTemplate = () => {
       return;
     }
 
+    if (processedFilename === "질풍가도-유영석") {
+      alert("테스트 음원은 다운로드 할 수 없습니다다.");
+      return;
+    }
+
     try {
       // AudioContext를 재사용하기 위해 상수로 선언
       const audioContext = new AudioContext();
