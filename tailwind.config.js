@@ -7,10 +7,23 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "custom-gray": "#374151",
+        "custom-dark": "#1F2937",
+        "custom-darker": "#111827",
+      },
+    },
   },
   plugins: [],
   safelist: [
-    "bg-[#FF0000]", // 임의의 값을 사용하는 클래스를 safelist에 추가
+    "bg-[#374151]",
+    "bg-[#1F2937]",
+    "bg-[#111827]",
+    "text-[#fff]",
+    "text-[#9CA3AF]",
+    "text-[#6B7280]",
+    "border-[#4B5563]",
+    "border-[#6B7280]",
   ],
 };
