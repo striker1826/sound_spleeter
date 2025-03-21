@@ -149,9 +149,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     if (previousTimeRef.current !== undefined) {
       const deltaTime = time - previousTimeRef.current;
       if (soundRef.current?.playing()) {
-        if (onTimeChange) {
-          onTimeChange(soundRef.current.seek() as number);
-        }
+        // onTimeChange 콜백 제거
       }
     }
     previousTimeRef.current = time;
@@ -180,13 +178,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [isPlaying]);
 
-  // 시간 변경 시 seek 호출
+  // currentTime 변경 시 오디오 재생 위치 업데이트
   useEffect(() => {
-    if (soundRef.current) {
-      const currentSeek = soundRef.current.seek();
-      if (Math.abs(currentSeek - currentTime) > 0.1) {
-        soundRef.current.seek(currentTime);
-      }
+    if (!soundRef.current) return;
+
+    // 현재 재생 위치와 목표 위치의 차이가 0.1초 이상일 때만 업데이트
+    const currentSeek = soundRef.current.seek() as number;
+    if (Math.abs(currentSeek - currentTime) > 0.1) {
+      soundRef.current.seek(currentTime);
     }
   }, [currentTime]);
 
@@ -206,16 +205,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       soundRef.current.pause();
     } else {
       soundRef.current.play();
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    if (soundRef.current) {
-      soundRef.current.seek(time);
-      if (onTimeChange) {
-        onTimeChange(time);
-      }
     }
   };
 
