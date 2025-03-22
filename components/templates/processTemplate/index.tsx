@@ -5,6 +5,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { CiPause1 } from "react-icons/ci";
 import { FaPause } from "react-icons/fa";
 type Track = "vocals" | "drums" | "bass" | "other";
@@ -18,7 +19,8 @@ const ProcessTemplate = () => {
   const [isAudioLoaded, setIsAudioLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processedFilename, setProcessedFilename] = useState<string | null>(
-    "질풍가도-유영석"
+    // "질풍가도-유영석"
+    null
   );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -150,6 +152,21 @@ const ProcessTemplate = () => {
     const uploadFile = file instanceof File ? file : file.target.files?.[0];
     if (!uploadFile) return;
 
+    // 오디오 파일 타입 확인
+    const audioTypes = [
+      "audio/mpeg", // MP3
+      "audio/wav", // WAV
+      "audio/ogg", // OGG
+      "audio/mp4", // AAC
+      "audio/flac", // FLAC
+      "audio/webm", // WEBM
+    ];
+
+    if (!audioTypes.includes(uploadFile.type)) {
+      toast.error("오디오 파일만 업로드 가능합니다.");
+      return;
+    }
+
     try {
       setIsProcessing(true);
       setError(null);
@@ -196,7 +213,6 @@ const ProcessTemplate = () => {
         eventSource.onmessage = async (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log("Progress update:", data);
             setProgress(data.progress || 0);
             setProgress(data.progress);
             if (data.progress === 100) {
@@ -204,7 +220,6 @@ const ProcessTemplate = () => {
               setIsProcessing(false);
 
               await new Promise((resolve) => setTimeout(resolve, 2000));
-              console.log("filename", filename);
               setProcessedFilename(filename);
               router.refresh();
             }
@@ -442,6 +457,7 @@ const ProcessTemplate = () => {
 
   return (
     <>
+      <Toaster position="top-center" reverseOrder={false} />
       {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
@@ -491,7 +507,7 @@ const ProcessTemplate = () => {
       </div>
       <div className="min-h-screen flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
         <div className="w-full rounded-[8px] px-[24px] bg-[#1F2937]">
-          <h2 className="mt-[24px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
+          <h2 className="mt-[48px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
             움원 분리 도구
           </h2>
           <p className="mt-[16px] text-[#9CA3AF] text-[16px] leading-[24px] text-center">
@@ -531,30 +547,32 @@ const ProcessTemplate = () => {
             </p>
           </div>
 
-          <div className="mt-[32px] rounded-[8px] w-full bg-[#374151] py-[16px] px-[16px]">
-            <h3 className="text-[#fff] truncate">
-              {processedFilename?.split("_").slice(1).join("_")}
-            </h3>
-            <input
-              type="range"
-              min="0"
-              max={duration}
-              step="0.1"
-              value={currentTime}
-              onChange={(e) => handleTimeChange(parseFloat(e.target.value))}
-              onMouseUp={handleTimeChangeEnd}
-              onTouchEnd={handleTimeChangeEnd}
-              className="flex-1 cursor-pointer w-full mt-[16px]"
-            />
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-200">
-                {formatTime(currentTime)}
-              </span>
-              <span className="text-sm text-gray-200">
-                {formatTime(duration)}
-              </span>
+          {processedFilename && (
+            <div className="mt-[32px] rounded-[8px] w-full bg-[#374151] py-[16px] px-[16px]">
+              <h3 className="text-[#fff] truncate">
+                {processedFilename?.split("_").slice(1).join("_")}
+              </h3>
+              <input
+                type="range"
+                min="0"
+                max={duration}
+                step="0.1"
+                value={currentTime}
+                onChange={(e) => handleTimeChange(parseFloat(e.target.value))}
+                onMouseUp={handleTimeChangeEnd}
+                onTouchEnd={handleTimeChangeEnd}
+                className="flex-1 cursor-pointer w-full mt-[16px]"
+              />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-200">
+                  {formatTime(currentTime)}
+                </span>
+                <span className="text-sm text-gray-200">
+                  {formatTime(duration)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {!isAudioLoaded && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[32px]">
@@ -569,37 +587,51 @@ const ProcessTemplate = () => {
                 ))}
             </div>
           )}
+          {!processedFilename && (
+            <div className="flex flex-col justify-center items-center mb-[48px]">
+              <button
+                onClick={() =>
+                  setProcessedFilename("3972900198_질풍가도-유영석")
+                }
+                className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
+              >
+                음원 분리 체험해보기
+              </button>
+            </div>
+          )}
 
-          <div className="w-full flex justify-center items-center gap-[24px] mt-[32px] mb-[24px]">
-            <button
-              className=" bg-[#000] px-[16px] py-[12px] rounded-[4px]"
-              onClick={handlePlayAll}
-            >
-              {isPlaying ? (
-                <FaPause color="#fff" />
-              ) : (
+          {processedFilename && (
+            <div className="w-full flex justify-center items-center gap-[24px] mt-[32px] mb-[24px]">
+              <button
+                className=" bg-[#000] px-[16px] py-[12px] rounded-[4px]"
+                onClick={handlePlayAll}
+              >
+                {isPlaying ? (
+                  <FaPause color="#fff" />
+                ) : (
+                  <Image
+                    src={"/imgs/play.png"}
+                    alt="play"
+                    width={12}
+                    height={12}
+                  />
+                )}
+              </button>
+
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-[8px] rounded-[4px] px-[24px] py-[8px] bg-[#000] text-[#fff] text-[16px] leading-[24px]"
+              >
                 <Image
-                  src={"/imgs/play.png"}
-                  alt="play"
-                  width={12}
-                  height={12}
+                  src={"/imgs/download.png"}
+                  alt="download"
+                  width={16}
+                  height={16}
                 />
-              )}
-            </button>
-
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-[8px] rounded-[4px] px-[24px] py-[8px] bg-[#000] text-[#fff] text-[16px] leading-[24px]"
-            >
-              <Image
-                src={"/imgs/download.png"}
-                alt="download"
-                width={16}
-                height={16}
-              />
-              다운로드
-            </button>
-          </div>
+                다운로드
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
