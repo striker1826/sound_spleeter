@@ -9,13 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@distube/ytdl-core": "^4.16.5",
     "howler": "^2.2.4",
     "next": "15.2.3",
     "next-auth": "^4.24.11",
+    "play-dl": "^1.9.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@types/howler": "^2.2.12",

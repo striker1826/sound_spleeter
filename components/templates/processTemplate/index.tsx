@@ -1,6 +1,7 @@
 "use client";
 
 import AudioPlayer from "@/components/molecules/AudioPlayer";
+import YouTubeInput from "@/components/molecules/YoutubeInput";
 import { useLoadingDots } from "@/hooks/useLoadingDots";
 import { formatFilename } from "@/utils/splitFileExtends";
 import { signIn, signOut, useSession } from "next-auth/react";
@@ -50,7 +51,20 @@ const ProcessTemplate = () => {
       gainNodesRef.current[track] = gainNode;
     });
 
+    // YouTube 파일 업로드 이벤트 리스너 추가
+    const handleYouTubeUpload = (event: CustomEvent) => {
+      handleFileUpload(event.detail);
+    };
+
+    document.addEventListener(
+      "fileUpload",
+      handleYouTubeUpload as EventListener
+    );
     return () => {
+      document.removeEventListener(
+        "fileUpload",
+        handleYouTubeUpload as EventListener
+      );
       audioContextRef.current?.close();
     };
   }, [isAudioLoaded]);
@@ -553,6 +567,10 @@ const ProcessTemplate = () => {
           <p className="mt-[16px] text-[#9CA3AF] text-[16px] leading-[24px] text-center">
             음악 파일을 업로드하여 보컬, 드럼, 베이스, 기타 악기를 분리하세요
           </p>
+
+          <div className="mt-[16px]">
+            <YouTubeInput onFileUpload={handleFileUpload} />
+          </div>
 
           <div
             className={`mt-[32px] flex flex-col justify-center items-center rounded-[8px] border-dashed border-[#4B5563] border-[2px] transition-colors duration-200 ${
