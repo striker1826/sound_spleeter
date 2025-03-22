@@ -519,7 +519,14 @@ const ProcessTemplate = () => {
 
       <div className="w-full px-[32px] bg-[#111827]">
         <div className="w-full bg-[#1F2937] py-[16px] px-[32px] flex justify-between items-center border-solid border-b-[1px] border-[#4B5563]">
-          <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
+          <Image
+            className="cursor-pointer"
+            onClick={() => router.push("/")}
+            src={"/imgs/logo.png"}
+            alt="logo"
+            width={32}
+            height={32}
+          />
           {session?.accessToken ? (
             <button
               className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
