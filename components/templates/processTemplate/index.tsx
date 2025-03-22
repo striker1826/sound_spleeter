@@ -529,26 +529,29 @@ const ProcessTemplate = () => {
         </div>
       )}
 
-      <div className="w-full bg-[#1F2937] py-[16px] px-[32px] flex justify-between items-center">
-        <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
-        {session?.accessToken ? (
-          <button
-            className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
-            onClick={() => signOut()}
-          >
-            로그아웃
-          </button>
-        ) : (
-          <button
-            className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
-            onClick={() => signIn("kakao")}
-          >
-            로그인
-          </button>
-        )}
+      <div className="w-full px-[32px] bg-[#111827]">
+        <div className="w-full bg-[#1F2937] py-[16px] px-[32px] flex justify-between items-center border-solid border-b-[1px] border-[#4B5563]">
+          <Image src={"/imgs/logo.png"} alt="logo" width={32} height={32} />
+          {session?.accessToken ? (
+            <button
+              className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
+              onClick={() => signOut()}
+            >
+              로그아웃
+            </button>
+          ) : (
+            <button
+              className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
+              onClick={() => signIn("kakao")}
+            >
+              로그인
+            </button>
+          )}
+        </div>
       </div>
-      <div className="min-h-screen flex flex-col justify-center items-center bg-[#111827] w-full pt-[32px] px-[32px] pb-[64px]">
-        <div className="w-full rounded-[8px] px-[24px] bg-[#1F2937]">
+
+      <div className="min-h-screen flex flex-col justify-center items-center bg-[#111827] w-full px-[32px] pb-[64px]">
+        <div className="w-full rounded-bl-[8px] rounded-br-[8px] px-[24px] bg-[#1F2937]">
           <h2 className="mt-[48px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
             움원 분리 도구
           </h2>
