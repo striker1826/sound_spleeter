@@ -22,17 +22,10 @@ const ProcessTemplate = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processedFilename, setProcessedFilename] = useState<string | null>(
-    // "질풍가도-유영석"
     null
   );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [trackVolumes, setTrackVolumes] = useState<Record<Track, number>>({
-    vocals: 1,
-    drums: 1,
-    bass: 1,
-    other: 1,
-  });
   const tracks: Track[] = ["vocals", "drums", "bass", "other"];
   const [progress, setProgress] = useState(0);
 
@@ -60,7 +53,7 @@ const ProcessTemplate = () => {
     return () => {
       audioContextRef.current?.close();
     };
-  }, []);
+  }, [isAudioLoaded]);
 
   // 오디오 파일 로드
   const loadAudio = async (track: string) => {
@@ -85,6 +78,9 @@ const ProcessTemplate = () => {
       toast.error("서버 문제로 파일을 가져오지 못했습니다. 다시 시도해주세요.");
       console.error(`Failed to load ${track}:`, error);
     } finally {
+      setIsPlaying(false);
+      stopPlayback();
+      setCurrentTime(0);
       setIsAudioLoaded(false);
     }
   };
