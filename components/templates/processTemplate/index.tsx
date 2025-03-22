@@ -623,9 +623,14 @@ const ProcessTemplate = () => {
           {!processedFilename && (
             <div className="flex flex-col justify-center items-center mb-[48px]">
               <button
-                onClick={() =>
-                  setProcessedFilename("3972900198_질풍가도-유영석")
-                }
+                onClick={async () => {
+                  setProcessedFilename("3972900198_질풍가도-유영석");
+                  await Promise.all(
+                    tracks.map((track) =>
+                      loadAudio("3972900198_질풍가도-유영석", track)
+                    )
+                  );
+                }}
                 className="bg-[#000] px-[16px] py-[12px] rounded-[4px] text-[#fff] text-[16px] leading-[24px]"
               >
                 음원 분리 체험해보기
