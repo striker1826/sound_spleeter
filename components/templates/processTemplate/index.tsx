@@ -56,10 +56,10 @@ const ProcessTemplate = () => {
   }, [isAudioLoaded]);
 
   // 오디오 파일 로드
-  const loadAudio = async (track: string) => {
+  const loadAudio = async (filename: string, track: string) => {
     try {
       setIsAudioLoaded(true);
-      const filenameWithoutExt = processedFilename!.replace(/\.[^/.]+$/, "");
+      const filenameWithoutExt = filename!.replace(/\.[^/.]+$/, "");
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
           filenameWithoutExt
@@ -85,22 +85,15 @@ const ProcessTemplate = () => {
     }
   };
 
-  // processedFilename이 변경될 때 모든 트랙 로드
-  useEffect(() => {
-    if (!processedFilename || !audioContextRef.current) return;
-
-    const loadAllTracks = async () => {
-      try {
-        await Promise.all(tracks.map((track) => loadAudio(track)));
-        console.log("All tracks loaded successfully");
-      } catch (error) {
-        console.error("Error loading tracks:", error);
-        setError("트랙 로딩 중 오류가 발생했습니다.");
-      }
-    };
-
-    loadAllTracks();
-  }, [processedFilename]);
+  const loadAllTracks = async (filename: string) => {
+    try {
+      await Promise.all(tracks.map((track) => loadAudio(filename, track)));
+      console.log("All tracks loaded successfully");
+    } catch (error) {
+      console.error("Error loading tracks:", error);
+      setError("트랙 로딩 중 오류가 발생했습니다.");
+    }
+  };
 
   // 모든 트랙 재생 시작
   const startPlayback = () => {
@@ -205,8 +198,6 @@ const ProcessTemplate = () => {
         throw new Error("서버에서 파일 이름을 받지 못했습니다.");
       }
 
-      // setProcessedFilename(data.filename);
-      // setTrackVolumes(data.audio_files.tracks || {});
       setError(null);
 
       // 파일 업로드 완료 후 1초 후에 SSE 연결 시작
@@ -225,10 +216,11 @@ const ProcessTemplate = () => {
             setProgress(data.progress);
             if (data.progress === 100) {
               eventSource.close();
-              setIsProcessing(false);
 
               await new Promise((resolve) => setTimeout(resolve, 2000));
               setProcessedFilename(filename);
+              setIsProcessing(false);
+              loadAllTracks(filename);
               router.refresh();
             }
           } catch (error) {
