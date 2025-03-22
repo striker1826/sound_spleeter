@@ -550,8 +550,8 @@ const ProcessTemplate = () => {
         </div>
       </div>
 
-      <div className="min-h-screen flex flex-col justify-center items-center bg-[#111827] w-full px-[32px] pb-[64px]">
-        <div className="w-full rounded-bl-[8px] rounded-br-[8px] px-[24px] bg-[#1F2937]">
+      <div className="min-h-[calc(100vh-80.67px)] flex flex-col items-center bg-[#111827] w-full px-[32px]">
+        <div className="w-full min-h-[calc(100vh-80.67px)] flex flex-col justify-center rounded-bl-[8px] rounded-br-[8px] px-[24px] bg-[#1F2937]">
           <h2 className="mt-[48px] text-[#fff] text-[30px] font-bold leading-[36px] text-center">
             움원 분리 도구
           </h2>
