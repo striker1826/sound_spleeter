@@ -1,6 +1,7 @@
 "use client";
 
 import AudioPlayer from "@/components/molecules/AudioPlayer";
+import { useLoadingDots } from "@/hooks/useLoadingDots";
 import { formatFilename } from "@/utils/splitFileExtends";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
@@ -18,6 +19,7 @@ const ProcessTemplate = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processedFilename, setProcessedFilename] = useState<string | null>(
     // "질풍가도-유영석"
@@ -42,7 +44,7 @@ const ProcessTemplate = () => {
     [key: string]: AudioBufferSourceNode | null;
   }>({});
 
-  const [loadingDots, setLoadingDots] = useState("");
+  const loadingDots = useLoadingDots([isAudioLoaded, isDownloading]);
 
   // AudioContext 초기화
   useEffect(() => {
@@ -103,19 +105,6 @@ const ProcessTemplate = () => {
 
     loadAllTracks();
   }, [processedFilename]);
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (isAudioLoaded) {
-      intervalId = setInterval(() => {
-        setLoadingDots((prev) => {
-          if (prev.length >= 3) return "";
-          return prev + ".";
-        });
-      }, 500);
-    }
-    return () => clearInterval(intervalId);
-  }, [isAudioLoaded]);
 
   // 모든 트랙 재생 시작
   const startPlayback = () => {
@@ -299,18 +288,18 @@ const ProcessTemplate = () => {
   };
 
   const handleDownload = async () => {
+    setIsDownloading(true);
     if (!processedFilename) {
       setError("파일이 선택되지 않았습니다.");
       return;
     }
 
     if (processedFilename === "질풍가도-유영석") {
-      alert("테스트 음원은 다운로드 할 수 없습니다다.");
+      alert("테스트 음원은 다운로드 할 수 없습니다.");
       return;
     }
 
     try {
-      // AudioContext를 재사용하기 위해 상수로 선언
       const audioContext = new AudioContext();
 
       // 각 트랙을 순차적으로 로드하고 디코딩
@@ -322,12 +311,17 @@ const ProcessTemplate = () => {
               ""
             );
             const response = await fetch(
-              `${
-                process.env.NEXT_PUBLIC_API_URL
-              }/audio/${providerAccountId}_${encodeURIComponent(
+              `${process.env.NEXT_PUBLIC_API_URL}/audio/${encodeURIComponent(
                 filenameWithoutExt
               )}/${track}`
             );
+
+            if (!response.ok) {
+              throw new Error(
+                `트랙 ${track} 로딩 실패: ${response.statusText}`
+              );
+            }
+
             const arrayBuffer = await response.arrayBuffer();
             return await audioContext.decodeAudioData(arrayBuffer);
           } catch (error) {
@@ -386,6 +380,8 @@ const ProcessTemplate = () => {
       setError(
         err instanceof Error ? err.message : "다운로드 중 오류가 발생했습니다."
       );
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -481,6 +477,7 @@ const ProcessTemplate = () => {
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
+
       {isProcessing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
@@ -503,7 +500,7 @@ const ProcessTemplate = () => {
       {isAudioLoaded && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
-            <h3 className="text-[#fff] text-[20px] font-bold text-center">
+            <h3 className="text-[#fff] text-[20px] font-bold text-center truncate">
               {formatFilename(processedFilename!)}
             </h3>
             <p className="text-[#fff] text-[20px] text-center whitespace-pre-line">
@@ -511,6 +508,22 @@ const ProcessTemplate = () => {
             </p>
             <p className="mt-[16px] text-[#9CA3AF] text-[14px] mt-[8px] text-center">
               10 ~ 15초 정도 소요됩니다.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isDownloading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
+            <h3 className="text-[#fff] text-[20px] font-bold text-center truncate">
+              {formatFilename(processedFilename!)}
+            </h3>
+            <p className="text-[#fff] text-[20px] text-center whitespace-pre-line">
+              음원을 다운로드 중입니다{loadingDots}
+            </p>
+            <p className="mt-[16px] text-[#9CA3AF] text-[14px] mt-[8px] text-center">
+              최대 1분 정도 소요됩니다.
             </p>
           </div>
         </div>
