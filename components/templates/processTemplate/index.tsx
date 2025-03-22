@@ -1,6 +1,7 @@
 "use client";
 
 import AudioPlayer from "@/components/molecules/AudioPlayer";
+import { formatFilename } from "@/utils/splitFileExtends";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -41,6 +42,8 @@ const ProcessTemplate = () => {
     [key: string]: AudioBufferSourceNode | null;
   }>({});
 
+  const [loadingDots, setLoadingDots] = useState("");
+
   // AudioContext 초기화
   useEffect(() => {
     audioContextRef.current = new AudioContext();
@@ -76,6 +79,8 @@ const ProcessTemplate = () => {
         setDuration(audioBuffer.duration);
       }
     } catch (error) {
+      setProcessedFilename(null);
+      toast.error("서버 문제로 파일을 가져오지 못했습니다. 다시 시도해주세요.");
       console.error(`Failed to load ${track}:`, error);
     } finally {
       setIsAudioLoaded(false);
@@ -98,6 +103,19 @@ const ProcessTemplate = () => {
 
     loadAllTracks();
   }, [processedFilename]);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    if (isAudioLoaded) {
+      intervalId = setInterval(() => {
+        setLoadingDots((prev) => {
+          if (prev.length >= 3) return "";
+          return prev + ".";
+        });
+      }, 500);
+    }
+    return () => clearInterval(intervalId);
+  }, [isAudioLoaded]);
 
   // 모든 트랙 재생 시작
   const startPlayback = () => {
@@ -164,6 +182,11 @@ const ProcessTemplate = () => {
 
     if (!audioTypes.includes(uploadFile.type)) {
       toast.error("오디오 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    if (uploadFile.size > 50 * 1024 * 1024) {
+      toast.error("파일 크기는 50MB를 초과할 수 없습니다.");
       return;
     }
 
@@ -481,8 +504,14 @@ const ProcessTemplate = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
             <h3 className="text-[#fff] text-[20px] font-bold text-center">
-              오디오 정보를 가져오는 중입니다. 10 ~ 15초 정도 소요됩니다.
+              {formatFilename(processedFilename!)}
             </h3>
+            <p className="text-[#fff] text-[20px] text-center whitespace-pre-line">
+              오디오 정보를 가져오는 중입니다{loadingDots}
+            </p>
+            <p className="mt-[16px] text-[#9CA3AF] text-[14px] mt-[8px] text-center">
+              10 ~ 15초 정도 소요됩니다.
+            </p>
           </div>
         </div>
       )}
