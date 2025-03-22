@@ -18,7 +18,7 @@
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "latest"
   },
   "devDependencies": {
     "@types/howler": "^2.2.12",
