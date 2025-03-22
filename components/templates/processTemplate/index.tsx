@@ -568,9 +568,9 @@ const ProcessTemplate = () => {
             음악 파일을 업로드하여 보컬, 드럼, 베이스, 기타 악기를 분리하세요
           </p>
 
-          <div className="mt-[16px]">
+          {/* <div className="mt-[16px]">
             <YouTubeInput onFileUpload={handleFileUpload} />
-          </div>
+          </div> */}
 
           <div
             className={`mt-[32px] flex flex-col justify-center items-center rounded-[8px] border-dashed border-[#4B5563] border-[2px] transition-colors duration-200 ${
