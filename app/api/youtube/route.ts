@@ -10,6 +10,7 @@ function extractVideoId(url: string): string | null {
 async function downloadAudio(videoId: string) {
   try {
     // 환경 변수에서 쿠키 파싱
+    console.log(process.env.YOUTUBE_COOKIES);
     const cookies = JSON.parse(process.env.YOUTUBE_COOKIES || "[]");
     const agent = ytdl.createAgent(cookies);
 
