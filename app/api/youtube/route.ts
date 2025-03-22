@@ -10,7 +10,19 @@ function extractVideoId(url: string): string | null {
 async function downloadAudio(videoId: string) {
   try {
     // 영상 정보 가져오기
-    const info = await ytdl.getInfo(videoId);
+    const info = await ytdl.getInfo(videoId, {
+      requestOptions: {
+        headers: {
+          cookie: process.env.YOUTUBE_COOKIE || "",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept: "*/*",
+          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+          Origin: "https://www.youtube.com",
+          Referer: "https://www.youtube.com/",
+        },
+      },
+    });
     const title = info.videoDetails.title;
 
     // 스트림 생성
@@ -19,6 +31,7 @@ async function downloadAudio(videoId: string) {
       filter: "audioonly",
       requestOptions: {
         headers: {
+          cookie: process.env.YOUTUBE_COOKIE || "",
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
           Accept: "*/*",
