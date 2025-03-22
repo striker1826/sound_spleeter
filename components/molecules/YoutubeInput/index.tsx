@@ -1,3 +1,4 @@
+import { useLoadingDots } from "@/hooks/useLoadingDots";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -9,6 +10,8 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadingDots = useLoadingDots([loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,25 +75,40 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
-      <div className="flex flex-col gap-4">
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="YouTube URL을 입력하세요"
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          {loading ? "처리 중..." : "변환하기"}
-        </button>
-        {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
-      </div>
-    </form>
+    <>
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1F2937] rounded-[8px] p-[32px] w-[400px]">
+            <p className="text-[#fff] text-[20px] text-center whitespace-pre-line">
+              오디오를 추출하는 중입니다{loadingDots}
+            </p>
+            <p className="mt-[16px] text-[#9CA3AF] text-[14px] mt-[8px] text-center">
+              약 10초 정도 소요됩니다.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
+        <div className="flex flex-col gap-4">
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="YouTube URL을 입력하세요"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loading ? "처리 중..." : "변환하기"}
+          </button>
+          {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
+        </div>
+      </form>
+    </>
   );
 }
