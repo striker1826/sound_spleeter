@@ -18,13 +18,16 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/youtube", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/youtube`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -33,19 +36,19 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
 
       // 오디오 데이터를 Blob으로 변환
       const audioBlob = await response.blob();
+      console.log({ audioBlob });
 
-      // Content-Disposition 헤더에서 파일 이름 추출
-      const contentDisposition = response.headers.get("content-disposition");
-      if (!contentDisposition) {
-        throw new Error("파일 이름을 가져올 수 없습니다.");
-      }
+      // JSON 응답에서 파일 이름 가져오기
+      const responseData = JSON.parse(
+        response.headers.get("X-Response-Data") || '{"filename": "audio.mp3"}'
+      );
+      console.log(
+        "All headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
-      const matches = /filename="(.+)"/.exec(contentDisposition);
-      if (!matches) {
-        throw new Error("파일 이름 형식이 올바르지 않습니다.");
-      }
-
-      const fileName = decodeURIComponent(matches[1]);
+      const fileName = responseData.filename;
+      console.log({ fileName });
 
       // Blob을 File 객체로 변환
       const audioFile = new File([audioBlob], fileName, {
