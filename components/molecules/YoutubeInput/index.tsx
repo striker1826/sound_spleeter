@@ -39,7 +39,6 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
 
       // 오디오 데이터를 Blob으로 변환
       const audioBlob = await response.blob();
-      console.log({ audioBlob });
 
       // JSON 응답에서 파일 이름 가져오기
       const responseData = JSON.parse(
@@ -51,7 +50,6 @@ export default function YouTubeInput({ onFileUpload }: YouTubeInputProps) {
       );
 
       const fileName = responseData.filename;
-      console.log({ fileName });
 
       // Blob을 File 객체로 변환
       const audioFile = new File([audioBlob], fileName, {
